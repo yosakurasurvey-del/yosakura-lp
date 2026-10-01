@@ -134,7 +134,7 @@ function slideshow(id){
   const el=document.getElementById('bg');el.innerHTML='';
   const im=[1,2,3,4,5].map(i=>{const d=document.createElement('i');d.style.backgroundImage=`url(images/${id}-${i}.png)`;el.appendChild(d);return d});
   let n=0;im[0].classList.add('on');
-  bgTimer=setInterval(()=>{im[n].classList.remove('on');n=(n+1)%im.length;im[n].classList.add('on')},1200);
+  bgTimer=setInterval(()=>{im[n].classList.remove('on');n=(n+1)%im.length;im[n].classList.add('on')},2000);
 }
 
 /* ========== 画面遷移 ========== */
