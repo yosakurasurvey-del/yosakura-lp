@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>YOSAKURA</title>
+<link rel="icon" type="image/png" href="images/main-logo.png">
+<link rel="apple-touch-icon" href="images/main-logo.png">
+<link rel="preload" as="image" href="images/main-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overscroll-behavior:none}
+body{font-family:'Shippori Mincho','Times New Roman',serif;color:#111;background:#fff;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.lang{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:2px;padding:4px;border-radius:20px;background:rgba(255,255,255,.85);font-size:12px;white-space:nowrap}
+.lang button{padding:5px 10px;border-radius:14px;color:#555}
+.lang button.on{background:#111;color:#fff}
+.back{position:fixed;top:calc(52px + env(safe-area-inset-top,0px));left:16px;z-index:30;font-size:13px;letter-spacing:.1em;padding:6px 10px;background:rgba(255,255,255,.85);border-radius:14px;display:none}
+.screen{position:absolute;inset:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.screen.on{opacity:1;visibility:visible}
+.menu{position:relative;z-index:1;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(36px,9vh,80px);padding:90px 20px}
+.menu button{font-size:clamp(22px,5.5vw,32px);letter-spacing:.18em}
+#s-top .menu{gap:clamp(26px,5vh,44px)}
+#s-top img{width:min(160px,40vw);margin-bottom:0}
+#s-menu{background:#000;color:#fff}
+#s-menu .menu button{font-size:clamp(18px,4.5vw,26px);letter-spacing:.14em;text-shadow:0 1px 8px rgba(0,0,0,.6)}
+.bg{position:absolute;inset:0;z-index:0;background:#111}
+.bg i{position:absolute;inset:0;background:center/cover no-repeat;opacity:0;transition:opacity .35s;will-change:opacity}
+.bg i.on{opacity:1}
+.bg:after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.4)}
+/* promo */
+.shop{max-width:760px;min-height:100%;margin:0 auto;padding:90px 24px;display:flex;flex-direction:column;justify-content:center}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.head img{height:clamp(80px,22vw,120px);max-width:55%;object-fit:contain;object-position:left top}
+.head div{text-align:right;letter-spacing:.14em}
+.head h1{font-weight:400;font-size:clamp(18px,4.5vw,28px);line-height:1.5}
+.head p{margin-top:18px;font-size:clamp(13px,3vw,17px)}
+.info{margin:46px 0 32px;line-height:2;letter-spacing:.06em;font-size:clamp(12px,2.8vw,15px)}
+.info .open{font-size:clamp(17px,4vw,22px);letter-spacing:.1em}
+.info .area{font-size:12px;color:#777}
+.vwrap{position:relative;width:min(100%,380px);aspect-ratio:3/4.5;margin:0 auto;background:#222;overflow:hidden}
+.vwrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#222}
+.vplay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.28);color:#fff;font-size:52px;z-index:2}
+.slider{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,3.3%,16px);margin-top:16px}
+.slider img{width:100%;aspect-ratio:7/5;object-fit:cover;object-position:center;display:block;background:#ddd}
+.offer{margin-top:48px;background:#4d1f00;color:#fff;text-align:center;padding:40px 20px;letter-spacing:.1em}
+.offer small{font-size:12px}
+.offer .pct{display:inline-block;margin:12px 0;padding:6px 26px;border:solid #fff;border-width:1px 0;font-size:34px}
+.offer .code{display:inline-block;margin:10px 0 16px;padding:12px 30px;background:#fff;color:#111}
+.offer .copy{display:block;margin:0 auto 14px;font-size:12px;color:#fff}
+.offer p{font-size:12px;line-height:1.9}
+.resv{display:block;width:fit-content;margin:36px auto 0;padding:16px 40px;background:#000;color:#fff;text-decoration:none;text-align:center;font-size:13px;letter-spacing:.14em}
+</style>
+</head>
+<body>
+<div class="lang" id="lang"></div>
+<button class="back" id="back">← BACK</button>
+
+<section class="screen" id="s-top">
+  <div class="menu">
+    <img src="images/main-logo.png" alt="YOSAKURA" fetchpriority="high">
+    <button data-n="japan" data-go="japan"></button>
+    <button data-n="vietnam" data-go="vietnam"></button>
+  </div>
+</section>
+
+<section class="screen" id="s-menu">
+  <div class="bg" id="bg"></div>
+  <div class="menu" id="menu"></div>
+</section>
+
+<section class="screen" id="s-shop"><div class="shop" id="shop"></div></section>
+
+<script>
+/* ========== 多言語 (en / ja / ko / vi) ========== */
+const LANGS=[['en','English'],['ja','日本語'],['ko','한국어'],['vi','Tiếng Việt']];
+const UI={
+  special:['SPECIAL OFFER','特別オファー','특별 혜택','ƯU ĐÃI ĐẶC BIỆT'],
+  coupon:['COUPON CODE','クーポンコード','쿠폰 코드','MÃ GIẢM GIÁ'],
+  copy:['[ COPY CODE ]','［ コードをコピー ］','[ 코드 복사 ]','[ SAO CHÉP MÃ ]'],
+  copied:['COPIED!','コピーしました','복사되었습니다','ĐÃ SAO CHÉP!'],
+  note:['Copy this code and enter it during your reservation.','このコードをコピーして予約時に入力してください。','이 코드를 복사하여 예약 시 입력해 주세요.','Sao chép mã này và nhập khi đặt bàn.'],
+  reserve:['MAKE A RESERVATION','ご予約はこちらから','예약하기','ĐẶT BÀN NGAY'],
+  open:['OPEN','営業時間','영업시간','GIỜ MỞ CỬA'],
+  back:['← BACK','← 戻る','← 뒤로','← QUAY LẠI']
+};
+const N={ // [en, ja, ko, vi]
+  japan:['JAPAN','日本','일본','NHẬT BẢN'],vietnam:['VIETNAM','ベトナム','베트남','VIỆT NAM'],
+  osaka:['OSAKA','大阪','오사카','OSAKA'],kyoto:['KYOTO','京都','교토','KYOTO'],tokyo:['TOKYO','東京','도쿄','TOKYO'],
+  yamanashi:['YAMANASHI','山梨','야마나시','YAMANASHI'],hiroshima:['HIROSHIMA','広島','히로시마','HIROSHIMA'],
+  hanoi:['Ha Noi','ハノイ','하노이','Hà Nội'],hochiminh:['Ho Chi Minh','ホーチミン','호치민','Hồ Chí Minh'],
+  namba:['Namba','難波','난바','Namba'],shinsaibashi:['Shinsaibashi','心斎橋','신사이바시','Shinsaibashi'],
+  nagahoribashi:['Nagahoribashi','長堀橋','나가호리바시','Nagahoribashi'],
+  gion:['Gion','祇園','기온','Gion'],asakusabashi:['Asakusabashi','浅草橋','아사쿠사바시','Asakusabashi'],
+  fujiyoshida_unagi:['Fujiyoshida / Japanese Eel','Fujiyoshida / 日本鰻','후지요시다 / 일본 장어','Fujiyoshida / Lươn Nhật'],
+  fujiyoshida_wagyu:['Fujiyoshida / Gyukatsu','Fujiyoshida / 牛カツ','후지요시다 / 규카츠','Fujiyoshida / Bò cốt lết Nhật']
+};
+let lang=0;
+const nm=id=>(N[id]||N[id.replace('_shop','')])[lang];
+
+/* ========== 画面ツリー ========== */
+const T={
+  root:['japan','vietnam'],
+  japan:['osaka','kyoto','tokyo','yamanashi','hiroshima'],
+  vietnam:['hanoi','hochiminh'],
+  osaka:['namba','shinsaibashi','nagahoribashi'],
+  kyoto:['gion'],tokyo:['asakusabashi'],
+  yamanashi:['fujiyoshida_unagi','fujiyoshida_wagyu'],
+  hiroshima:['hiroshima_shop'],hanoi:['hanoi_shop'],hochiminh:['hochiminh_shop']
+};
+T.kyoto=['gion'];
+
+/* ========== 店舗データ（住所・TEL・クーポン・予約URLは店舗ごとに差し替え） ========== */
+/* name=[en,ja,ko,vi]  addr=[en行[],ja行[],ko行[],vi行[]] */
+const S=(title,name,code,url,addr,tel,hours)=>({title,name,code,url,addr,tel,hours});
+const SHOPS={
+  namba:S('OMAKASE',
+    ['Japanese Cuisine YOSAKURA Main Branch','日本料理世桜本店','일본요리 요사쿠라 본점','Nhà hàng Nhật YOSAKURA Chi nhánh chính'],
+    'YOSAKURA-NAMBA','https://www.tablecheck.com/ja/yosakura/reserve/landing?utm_source=google',
+    [['1F, Rearino Higashi Shinsaibashi Building','1-4-21 Higashi Shinsaibashi, Chuo-ku','Osaka-shi, Osaka 542-0083'],
+     ['大阪府大阪市中央区東心斎橋1丁目4-21','レアリーノ東心斎橋ビル 1階'],
+     ['오사카부 오사카시 주오구 히가시신사이바시 1-4-21','레아리노 히가시신사이바시 빌딩 1층'],
+     ['Tầng 1, Tòa nhà Rearino Higashi Shinsaibashi','1-4-21 Higashi Shinsaibashi, Q. Chuo','TP. Osaka, Osaka 542-0083']],
+    'TEL 06-6210-4391','18:00-22:00'),
+  nagahoribashi:S('GYUKATSU',
+    ['Gyukatsu YOSAKURA Nagahoribashi','牛かつ世桜長堀橋店','규카츠 요사쿠라 나가호리바시점','Gyukatsu YOSAKURA Chi nhánh Nagahoribashi'],
+    'YOSAKURA-NAGAHORI','https://www.tablecheck.com/ja/gyukatsu-yosakura-nagahoribashi/reserve/message?utm_source=google',
+    [['1-3-13 Higashi Shinsaibashi, Chuo-ku','Osaka-shi, Osaka'],
+     ['大阪府大阪市中央区東心斎橋1丁目3-13'],
+     ['오사카부 오사카시 주오구 히가시신사이바시 1-3-13'],
+     ['1-3-13 Higashi Shinsaibashi, Q. Chuo','TP. Osaka, Osaka']],
+    'TEL 06-6755-8893','10:30-14:30 / 18:00-22:00'),
+  shinsaibashi:S('SUSHI',
+    ['Sushi YOSAKURA Shinsaibashi','寿司世桜心斎橋店','스시 요사쿠라 신사이바시점','Sushi YOSAKURA Chi nhánh Shinsaibashi'],
+    'YOSAKURA10','https://www.tablecheck.com/ja/sushiyosakura/reserve/message?utm_source=google',
+    [['B1F, Nikugekijo Building','2-7-10 Shinsaibashisuji, Chuo-ku','Osaka-shi, Osaka'],
+     ['大阪府大阪市中央区心斎橋筋2丁目7-10','肉劇場ビル 地下1階'],
+     ['오사카부 오사카시 주오구 신사이바시스지 2-7-10','니쿠게키조 빌딩 지하 1층'],
+     ['Tầng hầm 1, Tòa nhà Nikugekijo','2-7-10 Shinsaibashisuji, Q. Chuo','TP. Osaka, Osaka']],
+    'TEL 06-4708-5772','11:00-15:00 / 18:00-22:00'),
+  hiroshima_shop:S('WAGYU',
+    ['Wagyu YOSAKURA Hiroshima','和牛世桜広島店','와규 요사쿠라 히로시마점','Wagyu YOSAKURA Chi nhánh Hiroshima'],
+    'YOSAKURA-HIRO','https://www.tablecheck.com/ja/wagyu-yosakura/reserve/message?utm_content=link_in_bio&utm_id=97760_v0_s00_e0_tv3&utm_medium=social&utm_source=instagram&fbclid=PAZnRzaATxQF1wZG9mAmZkaWQWUMua-Rcsi-5UMPz_thrG_Opk_viFUWV4dG4DYWVtAjExAHNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp-bJu7ml0CvffhGryjzN_8Hng42T_uKgUIZiyJMNpIb865-AK4jZ-obWdiWo_aem_ehHkGVTF9YoTHGQtlXTUxA',
+    [['8-4 Hondori, Naka-ku','Hiroshima-shi, Hiroshima'],
+     ['広島県広島市中区本通8-4'],
+     ['히로시마현 히로시마시 나카구 혼도리 8-4'],
+     ['8-4 Hondori, Q. Naka','TP. Hiroshima, Hiroshima']],
+    'TEL 082-909-9529','11:00-15:00 / 17:00-21:00'),
+  asakusabashi:S('UNAGI',
+    ['Japanese Eel YOSAKURA Asakusabashi','日本鰻世桜浅草橋店','일본 장어 요사쿠라 아사쿠사바시점','Lươn Nhật YOSAKURA Chi nhánh Asakusabashi'],
+    'YOSAKURA-ASAKUSA','https://www.tablecheck.com/ja/japanese-unagi-yosakura-asakusabashi/reserve/message?utm_source=google&rwg_token=AFd1xnHAyKzLrOKprHUkkYH3l-zvFBLyEl57ZFAqf18TnAHyRUkOgPHRDUz1a97dxvoFrbcDs_RjilhBYotUCGxEnYdfRjjQu6KwjXKaD6MXO80nhJ253sc%3D',
+    [['2-7-4 Yanagibashi, Taito-ku','Tokyo'],
+     ['東京都台東区柳橋2丁目7-4'],
+     ['도쿄도 다이토구 야나기바시 2-7-4'],
+     ['2-7-4 Yanagibashi, Q. Taito','Tokyo']],
+    'TEL 03-5829-5480','10:30-14:30 / 17:00-20:30'),
+  gion:S('UNAGI',
+    ['Japanese Eel YOSAKURA Kyoto Gion','日本鰻世桜京都祇園店','일본 장어 요사쿠라 교토 기온점','Lươn Nhật YOSAKURA Chi nhánh Kyoto Gion'],
+    'YOSAKURA-GION','https://www.tablecheck.com/ja/japanese-unagi-yosakura-kyotogion/reserve/message?utm_source=google&rwg_token=AFd1xnETO6Z2F4ynR_Wsk3nJj8iZoHPaGNmiu3hqlAzqm4Z3uUkFgUYvj5x8lJaap4sqKb2mg1PFGhxEos1ud_A9L5g1Msti8KaCpLspwNbA9k51s4k9yLo%3D',
+    [['375-1 Kiyomoto-cho, Higashiyama-ku','Kyoto-shi, Kyoto'],
+     ['京都府京都市東山区清本町375-1'],
+     ['교토부 교토시 히가시야마구 기요모토초 375-1'],
+     ['375-1 Kiyomoto-cho, Q. Higashiyama','TP. Kyoto, Kyoto']],
+    'TEL 070-8477-4109','11:00-19:30'),
+  fujiyoshida_unagi:S('UNAGI',
+    ['Japanese Eel YOSAKURA Mt. Fuji','日本鰻世桜富士山店','일본 장어 요사쿠라 후지산점','Lươn Nhật YOSAKURA Chi nhánh Núi Phú Sĩ'],
+    'YOSAKURA-UNAGI','https://www.tablecheck.com/ja/shops/unagi-yosakura/reserve?utm_source=google',
+    [['3-12-80 Shimoyoshida, Fujiyoshida-shi','Yamanashi'],
+     ['山梨県富士吉田市下吉田3丁目12-80'],
+     ['야마나시현 후지요시다시 시모요시다 3-12-80'],
+     ['3-12-80 Shimoyoshida, TP. Fujiyoshida','Yamanashi']],
+    'TEL 0555-28-4390','11:00-16:00'),
+  fujiyoshida_wagyu:S('GYUKATSU',
+    ['Gyukatsu YOSAKURA Mt. Fuji','牛カツ世桜富士山店','규카츠 요사쿠라 후지산점','Gyukatsu YOSAKURA Chi nhánh Núi Phú Sĩ'],
+    'YOSAKURA-GYUKATSU','https://www.tablecheck.com/ja/gyukatsu-yosakura/reserve/message?utm_source=google',
+    [['3-15-7 Shimoyoshida, Fujiyoshida-shi','Yamanashi'],
+     ['山梨県富士吉田市下吉田3丁目15-7'],
+     ['야마나시현 후지요시다시 시모요시다 3-15-7'],
+     ['3-15-7 Shimoyoshida, TP. Fujiyoshida','Yamanashi']],
+    'TEL 0555-72-9329','11:00-16:00'),
+  hanoi_shop:S('GYUKATSU',
+    ['Gyukatsu YOSAKURA Phan Ke Binh','牛カツ世桜ファンケビン','규카츠 요사쿠라 판케빈점','Gyukatsu YOSAKURA Chi nhánh Phan Kế Bính'],
+    'YOSAKURA-HANOI','https://www.tablecheck.com/ja/gyukatsuyosakura-vietnam/reserve/message?utm_source=google&rwg_token=AFd1xnHCMZ8FT5hdha9Q0XRslc_6eFJE5bdJB54VqSevBcHvPZVUPfogrMbkvZkty_FZKWmcGUOOMVqWRspiRcYRP9S0uGsk7qoubHr69b1XrPbrGGi5vUQ%3D',
+    [['1F 146, Phan Ke Binh Street, Ba Dinh, Ha Noi'],
+     ['ベトナム ハノイ市 バーディン区','ファンケビン通り146 1階'],
+     ['하노이 바딘구 판케빈 거리 146, 1층'],
+     ['Tầng 1, 146 Phan Kế Bính, Ba Đình, Hà Nội']],
+    'TEL +84 866 500 293','10:30-14:30 / 17:00-22:00'),
+  hochiminh_shop:S('UNAGI',
+    ['Japanese Eel YOSAKURA Ho Chi Minh No.1','日本鰻世桜ホーチミン1号店','일본 장어 요사쿠라 호치민 1호점','Lươn Nhật YOSAKURA Chi nhánh 1 TP. Hồ Chí Minh'],
+    'YOSAKURA-HCM','https://www.tablecheck.com/ja/unagiyosakura-vietnam/reserve/message?utm_source=google&rwg_token=AFd1xnFEamCjb8MlH09riHGz9TuDWbAlw0LMI8c43ugJ6yrMxGndNBM9W7ot_I5bGxg3Zt6OP-uat5Sko3wMLRixkuAUegkK7lrOu6v6q664RGIGZXV1J_s%3D',
+    [['234 Nguyen Dinh Chieu Street, Xuan Hoa Ward','(former District 3), Ho Chi Minh City'],
+     ['ベトナム ホーチミン市 スアンホア区(旧3区)','グエンディンチュー通り234'],
+     ['호치민시 쑤언호아 구역(구 3군)','응우옌딘찌에우 거리 234'],
+     ['234 Nguyễn Đình Chiểu, Phường Xuân Hòa','(trước đây là Quận 3), TP. Hồ Chí Minh']],
+    'TEL +84 973 868 084','10:30-14:30 / 17:00-22:00')
+};
+
+/* ========== 画像プリロード基盤 ========== */
+const $=id=>document.getElementById(id);
+const loaded={};            // url -> Promise<boolean>（同じ画像は1回しか取りに行かない）
+/* Image オブジェクトは保持しない（スマホでデコード済み画像が溜まりメモリ不足→ページ自動リロードになるのを防ぐ。キャッシュはブラウザ任せ） */
+function load(u){
+  if(loaded[u])return loaded[u];
+  return loaded[u]=new Promise(res=>{
+    const i=new Image();
+    i.onload=()=>res(true);
+    i.onerror=()=>res(false);
+    i.src=u;
+  });
+}
+const idle=f=>('requestIdleCallback' in window)?requestIdleCallback(f,{timeout:1500}):setTimeout(f,200);
+
+/* ========== 背景スライドショー（2秒毎・枚数は自動検出） ========== */
+let bgTimer,bgToken=0;
+const BG_MAX=30;
+const bgUrl=(id,i)=>`images/${id}-${i}.png`;
+const bgState={};
+/* 1枚目は単独で最優先、2枚目以降は4枚ずつ並列で調べ、見つかった順にすぐ使えるようにする */
+function discover(id){
+  if(bgState[id])return bgState[id];
+  const st=bgState[id]={urls:[],done:false};
+  let ready;st.ready=new Promise(r=>ready=r);
+  st.p=(async()=>{
+    let s=1,B=1;
+    while(s<=BG_MAX&&!st.done){
+      const idx=[];for(let i=s;i<s+B&&i<=BG_MAX;i++)idx.push(i);
+      const res=await Promise.all(idx.map(i=>load(bgUrl(id,i))));
+      for(let k=0;k<res.length;k++){
+        if(!res[k]){st.done=true;break}
+        st.urls.push(bgUrl(id,idx[k]));
+      }
+      if(s===1)ready();
+      s+=B;B=4;
+    }
+    st.done=true;ready();
+  })();
+  return st;
+}
+async function slideshow(id){
+  clearInterval(bgTimer);
+  const el=$('bg');el.innerHTML='';
+  const token=++bgToken;
+  const st=discover(id);
+  await st.ready;                              // 1枚目が届き次第すぐ表示
+  if(token!==bgToken||!st.urls.length)return;  // 画面遷移済み／画像なしなら中止
+  /* 2枚のレイヤーだけを使い回す（全画像を同時にDOMへ載せるとスマホでメモリ不足になる） */
+  const L=[document.createElement('i'),document.createElement('i')];
+  el.append(L[0],L[1]);
+  L[0].style.backgroundImage=`url(${st.urls[0]})`;L[0].classList.add('on');
+  let cur=0,n=0;
+  bgTimer=setInterval(()=>{
+    if(st.urls.length<2)return;                // 後から見つかった画像は自動的に対象に入る
+    n=(n+1)%st.urls.length;
+    const nx=L[1-cur];
+    nx.style.backgroundImage=`url(${st.urls[n]})`;
+    L[cur].classList.remove('on');nx.classList.add('on');cur=1-cur;
+  },2000);
+}
+
+/* ========== 先読み ========== */
+function prefetch(id,light){
+  if(SHOPS[id]){
+    load(`images/logo-${id}.png`);
+    [1,2,3].forEach(i=>load(`images/${id}-food-${i}.png`));
+  }else if(T[id]){
+    light?load(bgUrl(id,1)):discover(id);      // 先読みは1枚目のみ。全枚数の検出は実際に表示する画面だけ
+  }
+}
+const prefetchChildren=id=>(T[id]||[]).forEach(c=>prefetch(c,true));
+
+/* ========== 画面遷移 ========== */
+let stack=['root'];
+const saveStack=()=>{try{sessionStorage.setItem('ys-stack',JSON.stringify(stack))}catch(e){}};
+/* リロードされても今の画面に戻れるよう復元 */
+try{
+  const sv=JSON.parse(sessionStorage.getItem('ys-stack')||'null');
+  if(Array.isArray(sv)&&sv.length>1&&sv[0]==='root'&&sv.every(x=>x==='root'||T[x]||SHOPS[x]))stack=sv;
+}catch(e){}
+history.replaceState({d:stack.length},'');
+function go(id){stack.push(id);history.pushState({d:stack.length},'');saveStack();show()}
+$('back').onclick=()=>{if(stack.length>1)history.back()};
+/* スマホのスワイプ戻る／戻るボタンでサイトを離れず1つ前の画面へ */
+addEventListener('popstate',e=>{
+  const d=(e.state&&e.state.d)||1;
+  if(d>stack.length){history.go(stack.length-d);return}
+  while(stack.length>d)stack.pop();
+  saveStack();show();
+});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go)});
+
+function show(){
+  const id=stack[stack.length-1];
+  prefetch(id);                                // フェードアウト中から読み込み開始
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  $('back').style.display=stack.length>1?'block':'none';
+  setTimeout(()=>{
+    clearInterval(window.sliderTimer);let s;
+    if(id==='root')s='s-top';
+    else if(SHOPS[id]){s='s-shop';renderShop(id)}
+    else{s='s-menu';renderMenu(id)}
+    $(s).scrollTop=0;updateText();$(s).classList.add('on');
+    if(s==='s-shop')kickVideo();
+    idle(()=>prefetchChildren(id));            // 次に進みそうな先を先読み
+  },250);
+}
+function renderMenu(id){
+  $('menu').innerHTML=T[id].map(c=>`<button data-go="${c}" data-n="${c}"></button>`).join('');
+  slideshow(id);
+}
+function renderShop(id){
+  const d=SHOPS[id],base=id;
+  $('shop').innerHTML=`
+  <div class="head"><img src="images/logo-${base}.png" alt="" decoding="async" fetchpriority="high">
+    <div><h1>${d.title}<br>RESTAURANT YOSAKURA</h1><p data-sn="${id}"></p></div></div>
+  <div class="info"><div class="area" data-n="${id}"></div>
+    <div class="open"><span data-u="open"></span> | ${d.hours}</div>
+    <span data-sa="${id}"></span><br>${d.tel}</div>
+  <div class="vwrap" id="vwrap"><button class="vplay" id="vplay" aria-label="play">▶</button></div>
+  <div class="slider" id="slider">${[1,2,3].map(i=>`<img src="images/${base}-food-${i}.png" alt="" loading="eager" decoding="async" fetchpriority="high">`).join('')}</div>
+  <div class="offer"><small data-u="special"></small><br><span class="pct">10<small>%</small> OFF</span><br>
+    <small data-u="coupon"></small><br><span class="code">${d.code}</span>
+    <button class="copy" id="copy" data-u="copy"></button>
+    <p data-u="note"></p></div>
+  <a class="resv" href="${d.url}" target="_blank" rel="noopener" data-u="reserve"></a>`;
+  mountVideo(id);
+  $('copy').onclick=async()=>{
+    try{await navigator.clipboard.writeText(d.code)}catch(e){const t=document.createElement('textarea');t.value=d.code;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}
+    const b=$('copy');b.dataset.u='copied';updateText();
+    setTimeout(()=>{b.dataset.u='copy';updateText()},1600);
+  };
+}
+
+/* ========== 動画（全ブラウザ対応の自動再生） ========== */
+function kickVideo(){
+  const v=document.querySelector('#vwrap video'),btn=$('vplay');
+  if(!v||!v.paused)return;
+  v.muted=true;
+  const p=v.play();
+  if(p&&p.catch)p.catch(()=>{if(btn&&v.paused)btn.style.display='flex'});
+}
+function mountVideo(id){
+  const wrap=$('vwrap'),btn=$('vplay');
+  const srcs=[`images/${id}.mp4`];
+  let i=0;
+  const v=document.createElement('video');
+  v.muted=true;v.defaultMuted=true;v.loop=true;v.autoplay=true;v.controls=false;
+  v.playsInline=true;v.preload='auto';v.disablePictureInPicture=true;
+  ['muted','playsinline','webkit-playsinline','x5-playsinline'].forEach(a=>v.setAttribute(a,''));
+  v.addEventListener('playing',()=>{btn.style.display='none'});
+  v.addEventListener('loadeddata',kickVideo);
+  v.addEventListener('canplay',kickVideo);
+  v.addEventListener('error',()=>{
+    i++;
+    if(i<srcs.length){v.src=srcs[i];v.load()}
+    else console.warn('動画を読み込めません:',srcs.join(' / '));
+  });
+  btn.onclick=()=>{v.muted=true;v.play().then(()=>{btn.style.display='none'}).catch(()=>{})};
+  wrap.insertBefore(v,btn);
+  v.src=srcs[0];v.load();
+}
+/* 自動再生がブロックされた環境（省電力モード等）では最初のタップ／スクロールで再生 */
+['click','touchstart','keydown','scroll'].forEach(ev=>document.addEventListener(ev,()=>kickVideo(),{passive:true,capture:true}));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)kickVideo()});
+
+/* ========== 言語切替（即時反映） ========== */
+function updateText(){
+  document.querySelectorAll('[data-n]').forEach(e=>e.textContent=nm(e.dataset.n));
+  document.querySelectorAll('[data-sn]').forEach(e=>e.textContent=SHOPS[e.dataset.sn].name[lang]);
+  document.querySelectorAll('[data-sa]').forEach(e=>e.innerHTML=SHOPS[e.dataset.sa].addr[lang].join('<br>'));
+  document.querySelectorAll('[data-u]').forEach(e=>e.textContent=UI[e.dataset.u][lang]);
+  $('back').textContent=UI.back[lang];
+  document.documentElement.lang=LANGS[lang][0];
+}
+$('lang').innerHTML=LANGS.map((l,i)=>`<button data-i="${i}">${l[1]}</button>`).join('');
+$('lang').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  lang=+b.dataset.i;
+  document.querySelectorAll('#lang button').forEach(x=>x.classList.toggle('on',x===b));
+  updateText();
+};
+$('lang').children[0].classList.add('on');
+updateText();
+if(stack.length>1)show();else $('s-top').classList.add('on');
+
+/* トップ表示後、アイドル時間に日本/ベトナムと各エリアの背景1枚目を先読み */
+idle(()=>{
+  prefetchChildren('root');
+  idle(()=>{prefetchChildren('japan');prefetchChildren('vietnam')});
+});
+</script>
+</body>
+</html>
