@@ -56,6 +56,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .info .area{font-size:12px;color:#777}
 .vwrap{position:relative;width:min(100%,380px);aspect-ratio:3/4.5;margin:0 auto;background:#222;overflow:hidden}
 .vwrap video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;background:#222}
+.vsoon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Shippori Mincho','Times New Roman',serif;font-size:clamp(20px,5vw,28px);letter-spacing:.2em;text-align:center;background:radial-gradient(ellipse at 50% 35%,#4a4a4a 0%,#1f1f1f 60%,#0d0d0d 100%);text-shadow:0 1px 10px rgba(0,0,0,.6)}
+.vsoon:before{content:"";position:absolute;inset:12px;border:1px solid rgba(255,255,255,.25);pointer-events:none}
 .vplay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.28);color:#fff;font-size:52px;z-index:2}
 .slider{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(8px,3.3%,16px);margin-top:16px}
 .slider img{width:100%;aspect-ratio:7/5;object-fit:cover;object-position:center;display:block;background:#ddd}
@@ -286,6 +288,8 @@ const HEADING={
   hanoi_shop:['GYUKATSU','YOSAKURA'],
   hochiminh_shop:['UNAGI','YOSAKURA']
 };
+/* 動画が未用意の店舗：動画枠に「Coming soon…」を表示。動画を入れたらここからIDを削除してください */
+const NO_VIDEO=['nagahoribashi_unagi','namba'];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
 /* ========== 画像プリロード基盤 ========== */
@@ -415,14 +419,14 @@ function renderShop(id){
   <div class="info"><div class="area" data-n="${id}"></div>
     <div class="open"><span data-u="open"></span> | ${d.hours}</div>
     <span data-sa="${id}"></span><br>${d.tel}</div>
-  <div class="vwrap" id="vwrap"><button class="vplay" id="vplay" aria-label="play">▶</button></div>
+  <div class="vwrap" id="vwrap">${NO_VIDEO.includes(id)?'<div class="vsoon">Coming soon…</div>':'<button class="vplay" id="vplay" aria-label="play">▶</button>'}</div>
   <div class="slider" id="slider">${[1,2,3].map(i=>`<img src="images/${base}-food-${i}.png" alt="" loading="eager" decoding="async" fetchpriority="high">`).join('')}</div>
   <div class="offer"><small data-u="special"></small><br><span class="pct">10<small>%</small> OFF</span><br>
     <small data-u="coupon"></small><br><span class="code">${d.code}</span>
     <button class="copy" id="copy" data-u="copy"></button>
     <p data-u="note"></p></div>
   <a class="resv" href="${d.url}" target="_blank" rel="noopener" data-u="reserve"></a>`;
-  mountVideo(id);
+  if(!NO_VIDEO.includes(id))mountVideo(id);
   $('copy').onclick=async()=>{
     try{await navigator.clipboard.writeText(d.code)}catch(e){const t=document.createElement('textarea');t.value=d.code;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove()}
     const b=$('copy');b.dataset.u='copied';updateText();
